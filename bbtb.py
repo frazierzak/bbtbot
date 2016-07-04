@@ -48,9 +48,11 @@ while y == 'y':
 	print "Finding top 2 submissions in", subreddit
 	for submission in subreddit.get_hot(limit = 2):
 		print 'Parsing thread:', submission.title
-		flat_comments = praw.helpers.flatten_tree(submission.comments)
-		for comment in flat_comments:
-			if re.search("!BBT", comment.body) and comment.link_id not in comments_replied_to:
+		#flat_comments = praw.helpers.flatten_tree(submission.comments)
+		submission.replace_more_comments(limit=None, threshold=0)
+		all_comments = submission.comments
+		for comment in all_comments:
+			if re.search("!BBT", comment.body) and comment.id not in comments_replied_to:
 				print 'Phrase found in comment id:', comment.link_id
 				comment_time = comment.created_utc
 				print 'Comment created at:', comment_time
@@ -62,7 +64,7 @@ while y == 'y':
 				
 				print 'Replying with BBT'
 				comment.reply(pst_time) #reply to comment
-				comments_replied_to.append(comment.link_id) #add comment link id to comments replied to
+				comments_replied_to.append(comment.id) #add comment link id to comments replied to
 
 	# Write our updated list back to the file
 	with open("comments_replied_to.txt", "w") as f:
