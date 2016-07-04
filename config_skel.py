@@ -1,0 +1,2 @@
+REDDIT_USERNAME = '' #YOUR USERNAME as string
+REDDIT_PASS = '' # YOUR PASSWORD as string
