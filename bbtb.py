@@ -108,6 +108,7 @@ for comment in stream:
           for comment_id in current_live_feed_comments:
             f.write(comment_id + "\n")
 
+      #If its not the current live feed and the comment has not been seen before
       elif comment.id not in current_live_feed_comments:
         print "Not current live feed and unseen comment"
         
@@ -136,6 +137,7 @@ for comment in stream:
           old_submission = current_live_feed
           old_title = old_submission.title
 
+          #Start loop for each comment_id in current_live_feed_comments
           for comment_id in current_live_feed_comments:
 
             #Grab comment object from id and put it into old_comment variable
@@ -193,6 +195,17 @@ for comment in stream:
           #Set current feed to comment's thread
           print "Setting current_live_feed to submission.id"
           current_live_feed = submission.id
+
+          print "Done! Starting over with new current_live_feed"
+
+        else:
+          print "Submission not in hot"
+
+      else:
+        print "Old live feed or old comment"
+
+    else:
+      print "Not live feed or posted by automoderator"
 
   else:
     print "Phrase not found"
