@@ -1,3 +1,5 @@
+# while True:
+#   try:
 #Start
 print "1. BBTBY 0.4 WIP Running..."
 
@@ -52,7 +54,7 @@ current_live_feed_comments = []
 
 #Load Comment Stream
 print "9. Loading comment stream"
-stream = praw.helpers.comment_stream(r, subreddit, limit=500, verbosity=1)
+stream = praw.helpers.comment_stream(r, subreddit, limit=None, verbosity=1)
 
 #Parse Comments in Stream
 print "10. Parsing comments"
@@ -60,7 +62,7 @@ for comment in stream:
 
   #Search for term in comment
   print "Searching for phrase in comment"
-  if re.search("Frank", comment.body):
+  if re.search("!BBT", comment.body):
 
     if comment.id not in comments_replied_to:
       #If term found, convert comment time to BBT 
@@ -148,7 +150,7 @@ for comment in stream:
               print "Comment score equal or greater than 3, checking if worthy_comments.txt exist"
               if not os.path.isfile("worthy_comments_%s_test.txt" % current_live_feed):
                 print "-worthy_comments.txt does not exist, creating worthy_comments variable"
-                worthy_comments = ["###["+ old_submission.title + "](" + old_submission.url + ")" + "  \n  \nBBTBot's Live Feed Summary. *Here I go summarizing  again!*  \n  \n" + "Time | Karma | Comment | User\n|||"]            
+                worthy_comments = ["###["+ old_submission.title + "](" + old_submission.url + ")" + "  \n  \nBBTBot's Live Feed Summary. *Here I go summarizing  again!*  \n  \n" + "Time | Karma | Comment | User\n---|---|---|---"]            
 
               #Convert comment time to BBT
               print "Converting time to BBT"
@@ -194,3 +196,7 @@ for comment in stream:
 
   else:
     print "Phrase not found"
+
+  # except:
+  #   print 'Error! Restarting the script'
+  #   time.sleep(30)
