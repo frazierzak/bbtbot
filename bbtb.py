@@ -64,16 +64,19 @@ for comment in stream:
   print "Searching for phrase in comment"
   if re.search("!BBT", comment.body):
 
+    #Check if comment.id is not in comments_replied to
+    print "Phrase found, making sure we haven't replied to this comment before"
     if comment.id not in comments_replied_to:
+
       #If term found, convert comment time to BBT 
-      print "Phrase found, grabbing BBT"
+      print "Converting comment_time to BBT"
       comment_time = comment.created_utc
       shifted_time = comment_time - 60
       arrow_time = arrow.get(shifted_time)    
       pst_time = arrow_time.to('US/Pacific')
       pst_time = pst_time.format('h:mma - MMM D')
 
-      #Comment Reply
+      #Comment Reply with BBT
       print "Replying with BBT"
       #comment.reply(pst_time)
 
@@ -151,7 +154,7 @@ for comment in stream:
               #Create worthy_comments.txt if it doesnt exist
               print "Comment score equal or greater than 3, checking if worthy_comments.txt exist"
               if not os.path.isfile("worthy_comments_%s_test.txt" % current_live_feed):
-                print "-worthy_comments.txt does not exist, creating worthy_comments variable"
+                print "worthy_comments.txt does not exist, creating worthy_comments variable"
                 worthy_comments = ["###["+ old_submission.title + "](" + old_submission.url + ")" + "  \n  \nBBTBot's Live Feed Summary. *Here I go summarizing  again!*  \n  \n" + "Time | Karma | Comment | User\n---|---|---|---"]            
 
               #Convert comment time to BBT
