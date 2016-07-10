@@ -1,7 +1,7 @@
 # while True:
 #   try:
 #Start
-print "1. BBTBY 0.5 Running..."
+print "1. BBTB 0.5 Running..."
 
 #Imports
 import praw
@@ -22,7 +22,7 @@ if not  os.path.isfile("config_bot.py"):
 
 #Define User_Agent and Bot Name
 print "3. Creating Agent"
-user_agent = ("BBTB WIP by zuffdaddy 0.5")
+user_agent = ("BBTB by zuffdaddy 0.5")
 r = praw.Reddit(user_agent = user_agent)
 
 #Log In with Bot
@@ -37,7 +37,7 @@ if not os.path.isfile("comments_replied_to.txt"):
 
 #If it does exist, load txt into variable
 else:
-  print "6. Comments_replied_to.txt does not exist, creating..."
+  print "6. Comments_replied_to.txt does exist, loading comments_replied_to variable..."
   with open("comments_replied_to.txt", "r") as f:
     comments_replied_to = f.read()
     comments_replied_to = comments_replied_to.split("\n")
@@ -191,7 +191,7 @@ while True:
           old_submission = r.get_submission(submission_id=current_thread)
           old_title = old_submission.title
           print "Old title:\n%s" % old_title
-          old_url = old_submission.url
+          old_url = old_submission.short_link
           print "Old url:\n%s" % old_url
 
           #Load current_thread_comments.txt
@@ -218,11 +218,14 @@ while True:
             print "Getting comment data from comment_link"
             comment = r.get_submission(comment_link).comments[0]
 
+            if comment.body == "NoneType" or comment.author == "NoneType":
+              current_thread_comments.remove(comment_link)
+
             print "Getting comment_score"
             comment_score = comment.score
 
             print "Checking if comment_score is greater than or equal to 5"
-            if comment_score >= 5:
+            if comment_score >= 3:
               print "Score is greater than or equal to 5"
 
               print "Converting score to have leading 0"
@@ -233,11 +236,14 @@ while True:
 
               comment_body = comment_body.strip("~*#_|-")
               comment_body = comment_body.replace("\n", "  ")
-              comment_body = comment_body.replace(phrase, "")
+              comment_body = comment_body.strip()
+
+              #Strip comment_link uncessary
+              #comment_link = comment_link.replace("https://www.reddit.com/r/BigBrother", "")
 
               print "Truncating body to 75 characters and add link at end"
-              #comment_body = (comment_body[:75] + '[...](' + comment_link + ')') if len(comment_body) > 75 else comment_body + ' [link](' + comment_link + ')'
               comment_body = (comment_body[:75] + '...') if len(comment_body) > 75 else comment_body
+              #comment_body = (comment_body[:75] + ' | [url](' + comment_link + ')') if len(comment_body) > 75 else comment_body + ' | [url](' + comment_link + ')'
 
               print "Getting comment author"
               comment_author = "/u/" + comment.author.name
@@ -255,7 +261,6 @@ while True:
               thread_recap.append(pst_time + " | " + str(comment_score) + " | " + comment_body + " | " + comment_author)
             else:
               print "Score is too low, skipping"
-              pass
 
           print "Adding saved comments to thread_recap.txt"    
           with open("thread_recap_%s.txt" % current_thread, "w") as f:
