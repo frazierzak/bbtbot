@@ -1,7 +1,7 @@
 # while True:
 #   try:
 #Start
-print "1. BBTBY 0.4 WIP Running..."
+print "1. BBTBY 0.5 Running..."
 
 #Imports
 import praw
@@ -22,23 +22,23 @@ if not  os.path.isfile("config_bot.py"):
 
 #Define User_Agent and Bot Name
 print "3. Creating Agent"
-user_agent = ("BBTB WIP by zuffdaddy 0.4")
+user_agent = ("BBTB WIP by zuffdaddy 0.5")
 r = praw.Reddit(user_agent = user_agent)
 
 #Log In with Bot
 print "4. Logging In"
 r.login(REDDIT_USERNAME, REDDIT_PASS, disable_warning=True)
 
-#Check for comments_replied_to_test.txt and create variable if it doesn't exist
-print "5. Checking for comments_replied_to_test.txt"
-if not os.path.isfile("comments_replied_to_test.txt"):
-  print "comments_replied_to_test.txt does not exist, creating comments_replied_to variable"
+#Check for comments_replied_to.txt and create variable if it doesn't exist
+print "5. Checking for comments_replied_to.txt"
+if not os.path.isfile("comments_replied_to.txt"):
+  print "comments_replied_to.txt does not exist, creating comments_replied_to variable"
   comments_replied_to = []
 
 #If it does exist, load txt into variable
 else:
-  print "6. Comments_replied_to_test.txt does not exist, creating..."
-  with open("comments_replied_to_test.txt", "r") as f:
+  print "6. Comments_replied_to.txt does not exist, creating..."
+  with open("comments_replied_to.txt", "r") as f:
     comments_replied_to = f.read()
     comments_replied_to = comments_replied_to.split("\n")
     comments_replied_to = filter(None, comments_replied_to)
@@ -48,28 +48,30 @@ print "7. Choosing Subreddit"
 subreddit = r.get_subreddit("bigbrother")
 
 #Create current_feed_thread variable
-print "8. Creating blank current_feed_thread and current_thread_comment_ids variables"
-current_thread = "4rxpw3"
-#current_live_feed_comments = []
+print "8. Creating blank current_thread variable"
+current_thread = ""
+
+#Set search phrase
+phrase = "!BBT"
 
 #Load Comment Stream
 print "9. Loading comment stream"
 stream = praw.helpers.comment_stream(r, subreddit, limit=None, verbosity=1)
 while True:
   #Parse Comments in Stream
-  print "10. Parsing comments"
+  #print "10. Parsing comments"
   for comment in stream:
 
     #Search for term in comment
-    print "Searching for phrase in comment"
-    if not re.search("!BBT", comment.body):
-      print "No Phrase Found..."
+    #print "Searching for phrase in comment"
+    if not re.search(phrase, comment.body):
+      #print "No Phrase Found..."
       break
 
     #Check if comment.id is not in comments_replied to
     print "Phrase found, is it a new comment?"
     if comment.id in comments_replied_to:
-      print "Saved Comment..."
+      print "Old Comment..."
       break
 
     #Make sure we're not replying to ourself
@@ -88,12 +90,12 @@ while True:
 
     #Reply to comment with BBT
     print "Replying with BBT"
-    #comment.reply(pst_time)
+    comment.reply(pst_time)
 
-    #Save comment's replied to comments_replied_to_test.txt
-    print "Saving comment to comments_replied_to_test.txt"
+    #Save comment's replied to comments_replied_to.txt
+    print "Saving comment to comments_replied_to.txt"
     comments_replied_to.append(comment.id)
-    with open("comments_replied_to_test.txt", "w") as f:
+    with open("comments_replied_to.txt", "w") as f:
       for comment_id in comments_replied_to:
         f.write(comment_id + "\n")
 
@@ -104,7 +106,7 @@ while True:
     sub_author = comment_sub.author.name
     print "Comment belongs to: \n%s \nCreated by %s" % (sub_title, sub_author)
 
-    #Check if live feed and submitter is AutoModerator
+    # Check if live feed and submitter is AutoModerator
     print "Checking if submission is a live feed and posted by automoderator"
     if "Live Feed Discussion" not in sub_title or "AutoModerator" not in sub_author:
       print "Not a live feed thread"
@@ -207,7 +209,7 @@ while True:
 
           #Add meta data to top of thread_recap
           print "Adding meta data to the top of thread_recap"
-          thread_recap = ["###["+ old_title + "](" + old_url + ")" + "  \n  \n/u/BBTBot's Live Feed Summary. *Here I go summarizing again!* Add **!BBT** to your posts to help make the summary  \n  \n" + "Time | Karma | Comment | User\n---|---|---|---"]
+          thread_recap = ["###["+ old_title + "](" + old_url + ")" + "  \n  \n/u/BBTBot's Live Feed Summary. Add **!BBT** to your posts to help make the summary!  \n  \n" + "Time | Karma | Comment | User\n---|---|---|---"]
 
           print "Begin parsing current_thread_comments"
           #Start loop for each comment_link in current_thread_comments
@@ -229,8 +231,13 @@ while True:
               print "Getting comment body"
               comment_body = comment.body
 
+              comment_body = comment_body.strip("~*#_|-")
+              comment_body = comment_body.replace("\n", "  ")
+              comment_body = comment_body.replace(phrase, "")
+
               print "Truncating body to 75 characters and add link at end"
-              comment_body = (comment_body[:75] + '[..](' + comment_link + ')') if len(comment_body) > 75 else comment_body
+              #comment_body = (comment_body[:75] + '[...](' + comment_link + ')') if len(comment_body) > 75 else comment_body + ' [link](' + comment_link + ')'
+              comment_body = (comment_body[:75] + '...') if len(comment_body) > 75 else comment_body
 
               print "Getting comment author"
               comment_author = "/u/" + comment.author.name
@@ -245,7 +252,7 @@ while True:
 
               #Add comment to thread_recap.txt
               print "Add comment to thread_recap.txt"
-              thread_recap.append(pst_time + " | " + str(comment_score) + " pts | " + comment_body + " | " + comment_author + "\n")
+              thread_recap.append(pst_time + " | " + str(comment_score) + " | " + comment_body + " | " + comment_author)
             else:
               print "Score is too low, skipping"
               pass
@@ -255,11 +262,24 @@ while True:
             for comment in thread_recap:
               f.write(comment + "\n")
 
-          #Post thread_recap.txt to new thread
+          with open("thread_recap_%s.txt" % current_thread, 'r') as f:
+            thread_recap=f.read()
 
           #Assign new sub_id to current_thread
-          print "Making new submission the current thread"
           current_thread = sub_id
+
+          #Post thread_recap.txt to new thread
+          print "Making new submission the current thread"
+          new_thread = r.get_submission(submission_id=current_thread)
+          new_thread.add_comment(thread_recap)
+
+          #Get submission and title
+          print "Grabbing new submission and title"
+          new_title = new_thread.title
+          new_url = new_thread.url
+
+          #Post link to new thread
+          old_submission.add_comment("Found New Live Feed Discussion:  \n###[%s](%s)" % (new_title, new_url))
 
           #Make sure current_thread_comments.txt exist
           print "Check if current_thread_comments.txt exist"
