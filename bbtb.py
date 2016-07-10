@@ -1,7 +1,7 @@
 # while True:
 #   try:
 #Start
-print "1. BBTBY 0.5 Running..."
+print "1. BBTBot 0.5 Running..."
 
 #Imports
 import praw
@@ -22,7 +22,7 @@ if not  os.path.isfile("config_bot.py"):
 
 #Define User_Agent and Bot Name
 print "3. Creating Agent"
-user_agent = ("BBTB WIP by zuffdaddy 0.5")
+user_agent = ("BBTBot by zuffdaddy 0.5")
 r = praw.Reddit(user_agent = user_agent)
 
 #Log In with Bot
@@ -37,7 +37,7 @@ if not os.path.isfile("comments_replied_to.txt"):
 
 #If it does exist, load txt into variable
 else:
-  print "6. Comments_replied_to.txt does not exist, creating..."
+  print "6. Comments_replied_to.txt does exist, loading comments_replied_to variable..."
   with open("comments_replied_to.txt", "r") as f:
     comments_replied_to = f.read()
     comments_replied_to = comments_replied_to.split("\n")
@@ -191,7 +191,7 @@ while True:
           old_submission = r.get_submission(submission_id=current_thread)
           old_title = old_submission.title
           print "Old title:\n%s" % old_title
-          old_url = old_submission.url
+          old_url = old_submission.short_link
           print "Old url:\n%s" % old_url
 
           #Load current_thread_comments.txt
@@ -200,30 +200,61 @@ while True:
             current_thread_comments = current_thread_comments.split("\n")
             current_thread_comments = filter(None, current_thread_comments)
 
-          #Create thread_recap.txt
+          #Check for thread_recap.txt, remove it if found
+          print "Checking for thread_recap.txt"
           if not os.path.isfile("thread_recap_%s.txt" % current_thread):
-            print "Can't find thread_recap.txt"
+            print "No previous thread_recap.txt found"
           else:
-            print "Removing previous thread_recap.txt"
-            os.remove("thread_recap_%s.txt" % current_thread)
+            print "Removing previous thread_recap.txt found"
+            #os.remove("thread_recap_%s.txt" % current_thread)
 
           #Add meta data to top of thread_recap
           print "Adding meta data to the top of thread_recap"
           thread_recap = ["###["+ old_title + "](" + old_url + ")" + "  \n  \n/u/BBTBot's Live Feed Summary. Add **!BBT** to your posts to help make the summary!  \n  \n" + "Time | Karma | Comment | User\n---|---|---|---"]
 
-          print "Begin parsing current_thread_comments"
+          #Create row_counter and post_counter variable that will count how many posts are added to the recap
+          row_counter = 0
+          post_counter = 0
+
           #Start loop for each comment_link in current_thread_comments
+          print "Begin parsing current_thread_comments"
           for comment_link in current_thread_comments:
+
+            #Check if row_counter is greater than 34, which is the comment limit in thread_recap
+            if row_counter > 34:
+
+              #Add 1 to post_counter
+              post_counter += 1
+
+              #Write thread_recap to thread_recap_%s_%s.txt          
+              print "Adding saved comments to thread_recap.txt" 
+              with open("thread_recap_%s_%s.txt" % (current_thread, post_counter), "w") as f:
+                for comment in thread_recap:
+                  f.write(comment + "\n")
+
+              #Clear thread_recap and add header for comment replies
+              thread_recap = ["Time | Karma | Comment | User\n---|---|---|---"]
+
+              #Reset row_counter
+              row_counter = 0
 
             print "Getting comment data from comment_link"
             comment = r.get_submission(comment_link).comments[0]
 
+            if comment.body == "NoneType" or comment.author == "NoneType":
+              current_thread_comments.remove(comment_link)
+
             print "Getting comment_score"
             comment_score = comment.score
 
-            print "Checking if comment_score is greater than or equal to 5"
-            if comment_score >= 5:
-              print "Score is greater than or equal to 5"
+            #Check if comment score is greater than or equal to 3, and if so save it's contents to thread_recap
+            print "Checking if comment_score is greater than or equal to 3"
+            if comment_score >= 3:
+              print "Score is greater than or equal to 3"
+
+              #Add 1 to post counter
+              row_counter += 1
+              print "row_counter = %d" % row_counter
 
               print "Converting score to have leading 0"
               comment_score = "%02d" % (comment_score,)
@@ -231,13 +262,18 @@ while True:
               print "Getting comment body"
               comment_body = comment.body
 
-              comment_body = comment_body.strip("~*#_|-")
-              comment_body = comment_body.replace("\n", "  ")
-              comment_body = comment_body.replace(phrase, "")
+              print "Removing unwanted characters, returns, and strip spaces"
+              #Replace all markdown formatting and returns. Strip leading and ending spaces
+              comment_body = comment_body.replace("~*#_|-\n", "")
+              comment_body = comment_body.strip()
 
+              #Strip comment_link uncessary meta
+              print "Removing uncessary url data from comment link"
+              comment_link = comment_link.replace("https://www.reddit.com/r/BigBrother", "")
+
+              #Remove any characters past 75 then add a link to the comment at the end
               print "Truncating body to 75 characters and add link at end"
-              #comment_body = (comment_body[:75] + '[...](' + comment_link + ')') if len(comment_body) > 75 else comment_body + ' [link](' + comment_link + ')'
-              comment_body = (comment_body[:75] + '...') if len(comment_body) > 75 else comment_body
+              comment_body = (comment_body[:75] + ' | [url](' + comment_link + ')') if len(comment_body) > 75 else comment_body + ' | [url](' + comment_link + ')'
 
               print "Getting comment author"
               comment_author = "/u/" + comment.author.name
@@ -250,20 +286,22 @@ while True:
               pst_time = arrow_time.to('US/Pacific')
               pst_time = pst_time.format('h:mma - MMM D')
 
-              #Add comment to thread_recap.txt
-              print "Add comment to thread_recap.txt"
+              #Add comment to thread_recap variable
+              print "Add comment to thread_recap variable"
               thread_recap.append(pst_time + " | " + str(comment_score) + " | " + comment_body + " | " + comment_author)
+
+            #If comment score is too low, skip
             else:
               print "Score is too low, skipping"
-              pass
 
-          print "Adding saved comments to thread_recap.txt"    
-          with open("thread_recap_%s.txt" % current_thread, "w") as f:
-            for comment in thread_recap:
-              f.write(comment + "\n")
+          #Open thread_recap.txt and write comment to it          
+          # print "Adding saved comments to thread_recap.txt" 
+          # with open("thread_recap_%s.txt" % current_thread, "w") as f:
+          #   for comment in thread_recap:
+          #     f.write(comment + "\n")
 
-          with open("thread_recap_%s.txt" % current_thread, 'r') as f:
-            thread_recap=f.read()
+          # with open("thread_recap_%s.txt" % current_thread, 'r') as f:
+          #   thread_recap=f.read()
 
           #Assign new sub_id to current_thread
           current_thread = sub_id
@@ -272,6 +310,11 @@ while True:
           print "Making new submission the current thread"
           new_thread = r.get_submission(submission_id=current_thread)
           new_thread.add_comment(thread_recap)
+
+          #Post thread_recap replies to root post
+          for post in post_counter:
+            pass
+            
 
           #Get submission and title
           print "Grabbing new submission and title"
