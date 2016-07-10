@@ -224,11 +224,11 @@ while True:
             print "Getting comment_score"
             comment_score = comment.score
 
-            print "Checking if comment_score is greater than or equal to 5"
+            print "Checking if comment_score is greater than or equal to 3"
             if comment_score >= 3:
-              print "Score is greater than or equal to 5"
+              print "Score is greater than or equal to 3"
 
-              print "Converting score to have leading 0"
+              print "Converting score to have leading 0 for sorting in table"
               comment_score = "%02d" % (comment_score,)
 
               print "Getting comment body"
@@ -236,6 +236,7 @@ while True:
 
               comment_body = comment_body.strip("~*#_|-")
               comment_body = comment_body.replace("\n", "  ")
+              comment_body = comment_body.replace(phrase, "")
               comment_body = comment_body.strip()
 
               #Strip comment_link uncessary
