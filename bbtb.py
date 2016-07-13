@@ -33,7 +33,7 @@ else:
     comments_replied_to = comments_replied_to.split("\n")
     comments_replied_to = filter(None, comments_replied_to)
 
-#Check for current_thread.txt
+#Check for current_thread.txt which contains the last current thread id
 print "Checking for current_thread.txt"
 if not os.path.isfile("current_thread.txt"):
   print "current_thread.txt not found"
@@ -43,11 +43,14 @@ else:
   with open("current_thread.txt", "r") as f:
     current_thread = f.read()
 
-#Declare Variables and Functions
+#Declare Variables
 subreddit = r.get_subreddit("bigbrother")
 phrase = "!BBT"
 thread_check_counter = 5
+
+#Declare Functions
 def RepresentsInt(s):
+  #This function checks if the string can be turned into an integer
   try:
     s.isdigit()
     return True
@@ -57,7 +60,9 @@ def convertBBT(comment):
   #Convert comment time to BBT
   print "Converting time to BBT"
   comment_time = comment.created_utc
+  #Check for characters after phrase for time_shift
   time_shift = re.search('!BBT-(\d+)', comment.body)
+  #If time shift detected, subtract from current BBT
   if time_shift and RepresentsInt(time_shift.group(1)):
     print "time shift!"
     print "shift request is %d minutes" % -int(time_shift.group(1))
@@ -67,7 +72,6 @@ def convertBBT(comment):
   else:
     print "no time shift"
     arrow_time = arrow.get(comment_time)  
-  #arrow_time = arrow.get(comment_time) 
   pst_time = arrow_time.to('US/Pacific')
   pst_time = pst_time.format('h:mma - MMM D')
   return pst_time
@@ -77,11 +81,14 @@ print "Loading comment stream"
 stream = praw.helpers.comment_stream(r, subreddit, limit=30, verbosity=1)
 while True:
   for comment in stream:
+    print "New Comment found"
 
+    #Check for deleted comments
     if comment.body == "NoneType" or comment.author == "NoneType":
       print "Deleted comment, skipping..."
       break
 
+    #Check if replied to already
     print "Checking if replied to"
     if comment.id in comments_replied_to:
       print "Previous replied comment, skipping..."
@@ -94,6 +101,7 @@ while True:
       print "Checking for new thread"
       thread_check_counter = 5
 
+      #Grab relevant comment data
       comment_sub = comment.submission
       comment_sub_id = comment_sub.id
       comment_sub_title = comment_sub.title
@@ -105,8 +113,10 @@ while True:
         print "Still the current thread"
       elif comment_sub not in hot:
         print "Not in hot"
-      elif "Live Feed Discussion" not in comment_sub_title or "AutoModerator" not in comment_sub_author:
-        print "Not a live feed discussion or made by AutoModerator"
+      elif "Live Feed Discussion" not in comment_sub_title:
+        print "Not a live feed discussion"
+      elif "AutoModerator" not in comment_sub_author:
+        print "Not made by AutoModerator"
       elif not os.path.isfile("current_thread_comments_%s.txt" % current_thread) or current_thread == "":
         print "current_thread_comments_%s.txt not found, making this the current thread" % current_thread
         current_thread_comments = []
@@ -138,12 +148,13 @@ while True:
 
           #Get comment from comment_link
           try:
-              comment = r.get_submission(comment_link).comments[0]
+            comment = r.get_submission(comment_link).comments[0]
           except IndexError:
-              current_thread_comments.remove(comment_link)
-              continue
+            #If comment deleted, remove from current_thread comments and continue to next
+            current_thread_comments.remove(comment_link)
+            continue
 
-          #If comment is deleted, remove from current_thread_comments
+          #If comment deleted, remove from current_thread comments and continue to next
           if comment.body == None or comment.author == None or comment.author.name == None:
             print "Deleted comment found, removing from list"
             current_thread_comments.remove(comment_link)
@@ -153,6 +164,7 @@ while True:
           if row_counter > 34:
             print "35 rows reached"
             
+            #Reset the row_counter
             row_counter = 0
 
             #Write thread_recap to thread_recap_%s_%s.txt
@@ -161,6 +173,7 @@ while True:
               for recap in thread_recap:
                 f.write(recap + "\n")
 
+            #Add one to post_counter
             post_counter += 1
 
             #Clear thread_recap and add header for comment replies
@@ -189,46 +202,54 @@ while True:
           for recap in thread_recap:
             f.write(recap + "\n")
 
+        #Declare the new thread
         new_thread = comment_sub
         
         #Post recap_post
         if os.path.isfile("thread_recap_%s_0.txt" % current_thread):
           with open("thread_recap_%s_0.txt" % current_thread, "r") as f:
             thread_recap = f.read()
-          print "\n|---Posting thread_recap_%s_0.txt---|\n" % current_thread
+          print "\n|---Posting thread_recap.txt---|\n"
           recap_post = new_thread.add_comment(thread_recap)
 
         #If one or more posts, start making replies
         if post_counter > 0:
+          #While there are posts left, keep posting replies
           while post_counter != 0:
             if os.path.isfile("thread_recap_%s_%s.txt" % (current_thread, post_counter)):
               with open("thread_recap_%s_%s.txt" % (current_thread, post_counter), "r") as f:
                 thread_recap = f.read()
             post_counter -= 1
-            print "\n|---Posting reply_post = recap_post.add_comment(%s)---|\n" %  thread_recap
+            print "\n|---Posting thread_recap_%d.txt to reply_post---|\n" % post_counter
             reply_post = recap_post.add_comment(thread_recap)
             recap_post = reply_post
 
+        #Set the new curent thread
         current_thread = comment_sub_id
 
         #Write current_thread to current_thread.txt
         with open("current_thread.txt", "w") as f:
           f.write(current_thread)
 
+    #Check for phrase
     if not re.search(phrase, comment.body):
       print "Phrase not found"
       break
 
+    #Check if posted by BBTBot
     if "BBTBot" == comment.author.name:
       print "Not replying to BBTBot"
       break
 
+    #Convert BBT
     print "Converting BBT"
     pst_time = convertBBT(comment)
 
+    #Reply with BBT
     print "Replying with BBT"
     comment.reply(pst_time)
 
+    #Add to comments_replied_to.txt
     print "Adding to comments_replied_to.txt"
     comments_replied_to.append(comment.id)
     with open("comments_replied_to.txt", "w") as f:
@@ -238,6 +259,7 @@ while True:
     comment_sub = comment.submission
     comment_sub_id = comment_sub.id
 
+    #Add to current_thread_comments.txt if in current_thread
     if comment_sub_id == current_thread:
       print "Adding to current_thread_comments_%s.txt" % current_thread
       if not os.path.isfile("current_thread_comments_%s.txt" % current_thread):
