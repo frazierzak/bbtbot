@@ -71,14 +71,15 @@ def convertBBT(comment):
     arrow_time = arrow.get(shifted_time)
   else:
     print "no time shift"
-    arrow_time = arrow.get(comment_time)  
+    shifted_time = comment_time - 60
+    arrow_time = arrow.get(shifted_time)    
   pst_time = arrow_time.to('US/Pacific')
   pst_time = pst_time.format('h:mma - MMM D')
   return pst_time
 
 #Load Comment Stream
 print "Loading comment stream"
-stream = praw.helpers.comment_stream(r, subreddit, limit=30, verbosity=1)
+stream = praw.helpers.comment_stream(r, subreddit, limit=50, verbosity=1)
 while True:
   for comment in stream:
     print "New Comment found"
@@ -136,7 +137,7 @@ while True:
         old_url = old_submission.short_link
 
         #Add meta header to top of thread_recap
-        thread_recap = ["###["+ old_title + "](" + old_url + ")" + "  \n  \n/u/BBTBot's Live Feed Summary. Add **!BBT** to your posts to help make the summary!  \n  \n" + "Time|Karma|Comment|Link|User\n---|---|---|---|---"]
+        thread_recap = ["###["+ old_title + "](" + old_url + ") Recap\n___\n^**!BBT** ^Get ^the ^current ^house ^time ^minus ^1 ^minute.  \n^**!BBT-#** ^Replace ^**#** ^with ^minutes ^to ^go ^back\n\nTime|Karma|Comment|Link|User\n---|---|---|---|---"]
 
         #Create row_counter and post_counter variable that will count how many posts are added to the recap
         row_counter = 0
@@ -204,6 +205,14 @@ while True:
 
         #Declare the new thread
         new_thread = comment_sub
+
+        #Get submission and title
+        print "Grabbing new submission and title"
+        new_title = new_thread.title
+        new_url = new_thread.url
+
+        #Post link to new thread
+        old_submission.add_comment("New Live Feed Discussion:\n###[%s](%s)\n___\n^**!BBT** ^Get ^the ^current ^house ^time ^minus ^1 ^minute.  \n^**!BBT-#** ^Replace ^**#** ^with ^minutes ^to ^go ^back" % (new_title, new_url))
         
         #Post recap_post
         if os.path.isfile("thread_recap_%s_0.txt" % current_thread):
@@ -213,9 +222,11 @@ while True:
           recap_post = new_thread.add_comment(thread_recap)
 
         #If one or more posts, start making replies
+        print "%d posts to make" % post_counter
         if post_counter > 0:
           #While there are posts left, keep posting replies
           while post_counter != 0:
+            print "%d posts left to make" % post_counter
             if os.path.isfile("thread_recap_%s_%s.txt" % (current_thread, post_counter)):
               with open("thread_recap_%s_%s.txt" % (current_thread, post_counter), "r") as f:
                 thread_recap = f.read()
@@ -247,7 +258,7 @@ while True:
 
     #Reply with BBT
     print "Replying with BBT"
-    comment.reply(pst_time)
+    comment.reply(pst_time + "\n___\n^**!BBT** ^Get ^the ^current ^house ^time ^minus ^1 ^minute.  \n^**!BBT-#** ^Replace ^**#** ^with ^minutes ^to ^go ^back")
 
     #Add to comments_replied_to.txt
     print "Adding to comments_replied_to.txt"
