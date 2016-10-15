@@ -1,7 +1,7 @@
 while True:
   try:
     #Start
-    print "BBTB 0.7 Running"
+    print "BBTB OTT 0.7 Running"
 
     #Imports
     import praw
@@ -20,7 +20,7 @@ while True:
       exit(1)
 
     #Define User_Agent and Bot Name
-    user_agent = ("BBTB 0.7 by zuffdaddy")
+    user_agent = ("BBTB OTT 0.7 by zuffdaddy")
     r = praw.Reddit(user_agent = user_agent)
 
     #Log In with Bot
@@ -100,7 +100,7 @@ while True:
 
     def bbvPost(bbv_title, bbv_desc, bbv_time):
       #Post to BBV Bookmarks
-      bbvEntry=[('name','bbus18-reddit'),('title',bbv_title),('desc',bbv_desc),('channel', 5),('timestamp', bbv_time)]
+      bbvEntry=[('name','bbusott1-reddit'),('title',bbv_title),('desc',bbv_desc),('channel', 5),('timestamp', bbv_time)]
       bbvEntry=urllib.urlencode(bbvEntry)
       path='http://goodiesfor.me/bigbrother/bookmark.php'
       req=urllib2.Request(path, bbvEntry)
