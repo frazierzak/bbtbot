@@ -100,17 +100,7 @@ while True:
 
     def bbvPost(bbv_title, bbv_desc, bbv_time):
       #Post to BBV Bookmarks
-      bbvEntry=[('name','bbusott1-reddit'),('title',bbv_title),('desc',bbv_desc),('channel', 5),('timestamp', bbv_time)]
-      bbvEntry=urllib.urlencode(bbvEntry)
-      path='http://goodiesfor.me/bigbrother/bookmark.php'
-      req=urllib2.Request(path, bbvEntry)
-      req.add_header("Content-type", "application/x-www-form-urlencoded")
-      time.sleep(1)
-      page=urllib2.urlopen(req).read()
-      if page == '<font color="green">added </font>':
-        print "Successfully Posted to BBV"
-      else:
-        print "Failed to Post to BBV"
+      #Hidden
 
     #Load Comment Stream
     print "Loading comment stream"
